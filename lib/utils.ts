@@ -9,6 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return d.toLocaleDateString('en-US', {
+    timeZone: 'Asia/Karachi',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -19,6 +20,7 @@ export function formatDate(date: Date | string): string {
 export function formatTime(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return d.toLocaleTimeString('en-US', {
+    timeZone: 'Asia/Karachi',
     hour: '2-digit',
     minute: '2-digit',
   })

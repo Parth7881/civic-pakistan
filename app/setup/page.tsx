@@ -1,0 +1,3 @@
+export default function Setup() {
+ return <section className="narrow-page"><p className="eyebrow">Connection required</p><h1>CivicPakistan is not connected yet.</h1><p className="lede">Citizen accounts and reports will be available when the platform database is configured.</p><div className="notice"><h2>For the project operator</h2><p>Follow <code>docs/PART1_SETUP.md</code>: configure the Supabase URL and public key, add the server-only service role key, apply the two migrations, and configure email confirmation redirects. Restart the app after setting environment variables.</p><p>No demo account or report is being simulated.</p></div></section>
+}

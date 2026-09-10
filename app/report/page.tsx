@@ -1,0 +1,11 @@
+import { redirect } from 'next/navigation'
+import { requireCitizen } from '@/modules/auth/session'
+import { ReportForm } from '@/components/report-form'
+export const dynamic='force-dynamic'
+export default async function Report(){
+ const {db,profile}=await requireCitizen()
+ if(!profile.active_jurisdiction_id) redirect('/jurisdiction')
+ const {data:area,error}=await db.from('jurisdictions').select('name').eq('id',profile.active_jurisdiction_id).single()
+ if(error||!area) throw new Error('Your civic area is unavailable.')
+ return <><p className="eyebrow">{area.name} · Citizen report</p><h1>Report a civic issue.</h1><p className="lede">Live location. Clear evidence. A record you can follow.</p><ReportForm area={area.name}/></>
+}

@@ -11,6 +11,8 @@ node_modules/
 
 # Next.js
 .next/
+supabase/.temp/
+*.tsbuildinfo
 out/
 
 # Build output
@@ -42,4 +44,6 @@ coverage/
 
 # Misc
 *.log
+zip kiro.zip
+
 zip kiro.zip

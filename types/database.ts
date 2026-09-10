@@ -8,8 +8,23 @@ export type Json =
 
 export interface Database {
   public: {
+    Views: { [_ in never]: never }
+    Functions: {
+      start_capture: { Args: { p_citizen: string; p_lat: number; p_lng: number; p_accuracy: number; p_timestamp: string }; Returns: string }
+      submit_citizen_report: { Args: { p_citizen: string; p_session: string; p_urgency: string; p_description: string; p_lat: number; p_lng: number; p_accuracy: number; p_timestamp: string; p_evidence: Json }; Returns: string }
+      list_public_incidents: { Args: Record<string, never>; Returns: { id: string; jurisdiction_id: string; category: string | null; urgency: string | null; status: string; created_at: string; latitude: number; longitude: number }[] }
+    }
+    Enums: { [_ in never]: never }
+    CompositeTypes: { [_ in never]: never }
     Tables: {
+      capture_uploads: {
+        Relationships: []
+        Row: { id:string; capture_session_id:string; citizen_id:string; storage_path_private:string; storage_path_public:string; captured_at:string; media_hash:string; created_at:string }
+        Insert: { id:string; capture_session_id:string; citizen_id:string; storage_path_private:string; storage_path_public:string; captured_at:string; media_hash:string; created_at?:string }
+        Update: { id?:string }
+      }
       profiles: {
+        Relationships: []
         Row: {
           id: string
           display_name: string | null
@@ -36,6 +51,7 @@ export interface Database {
         }
       }
       jurisdictions: {
+        Relationships: []
         Row: {
           id: string
           name: string
@@ -68,6 +84,7 @@ export interface Database {
         }
       }
       government_memberships: {
+        Relationships: []
         Row: {
           id: string
           user_id: string
@@ -97,7 +114,10 @@ export interface Database {
         }
       }
       capture_sessions: {
+        Relationships: []
         Row: {
+          location_timestamp: string
+          consumed_at: string | null
           id: string
           citizen_id: string
           coordinates: unknown // PostGIS point
@@ -108,6 +128,8 @@ export interface Database {
           created_at: string
         }
         Insert: {
+          location_timestamp: string
+          consumed_at?: string | null
           id?: string
           citizen_id: string
           coordinates: unknown
@@ -118,6 +140,8 @@ export interface Database {
           created_at?: string
         }
         Update: {
+          location_timestamp?: string
+          consumed_at?: string | null
           id?: string
           citizen_id?: string
           coordinates?: unknown
@@ -129,6 +153,7 @@ export interface Database {
         }
       }
       citizen_reports: {
+        Relationships: []
         Row: {
           id: string
           citizen_id: string
@@ -176,6 +201,7 @@ export interface Database {
         }
       }
       incidents: {
+        Relationships: []
         Row: {
           id: string
           jurisdiction_id: string
@@ -183,7 +209,7 @@ export interface Database {
           category: string | null
           urgency: 'URGENT_HAZARD' | 'MAINTENANCE' | null
           workstream: string | null
-          status: 'ACCEPTED' | 'IN_PROGRESS' | 'RESOLVED' | 'VERIFIED_RESOLVED' | 'FLAGGED_FOR_REREVIEW'
+          status: 'SUBMITTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'RESOLVED' | 'VERIFIED_RESOLVED' | 'FLAGGED_FOR_REREVIEW'
           coordinates: unknown // PostGIS point
           created_at: string
           accepted_at: string | null
@@ -198,7 +224,7 @@ export interface Database {
           category?: string | null
           urgency?: 'URGENT_HAZARD' | 'MAINTENANCE' | null
           workstream?: string | null
-          status?: 'ACCEPTED' | 'IN_PROGRESS' | 'RESOLVED' | 'VERIFIED_RESOLVED' | 'FLAGGED_FOR_REREVIEW'
+          status?: 'SUBMITTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'RESOLVED' | 'VERIFIED_RESOLVED' | 'FLAGGED_FOR_REREVIEW'
           coordinates: unknown
           created_at?: string
           accepted_at?: string | null
@@ -213,7 +239,7 @@ export interface Database {
           category?: string | null
           urgency?: 'URGENT_HAZARD' | 'MAINTENANCE' | null
           workstream?: string | null
-          status?: 'ACCEPTED' | 'IN_PROGRESS' | 'RESOLVED' | 'VERIFIED_RESOLVED' | 'FLAGGED_FOR_REREVIEW'
+          status?: 'SUBMITTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'RESOLVED' | 'VERIFIED_RESOLVED' | 'FLAGGED_FOR_REREVIEW'
           coordinates?: unknown
           created_at?: string
           accepted_at?: string | null
@@ -223,6 +249,7 @@ export interface Database {
         }
       }
       evidence: {
+        Relationships: []
         Row: {
           id: string
           report_id: string | null
