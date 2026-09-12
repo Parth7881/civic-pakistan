@@ -12,7 +12,7 @@ export function MobileTopBar({identity,variant}:{identity:Identity;variant:'citi
   <Link className="brand-mark" href={government?'/government':'/home'} aria-label="CivicPakistan home">{government?<Building2 size={16}/>:<ShieldCheck size={16}/>}</Link>
   <b>CivicPakistan</b>
   {identity.area&&<span className="topbar-chip"><MapPin size={13}/>{identity.area}</span>}
-  <AccountMenu identity={identity} variant={variant}/>
+  <AccountMenu identity={identity} variant={variant} align="end" compact/>
  </div>
 }
 

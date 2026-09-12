@@ -4,7 +4,7 @@ import './globals.css'
 import { Providers } from '@/components/providers'
 import { AppShell } from '@/components/app-shell'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-civic', display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'CivicPakistan - Civic Accountability Platform',

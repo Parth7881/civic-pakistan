@@ -4,6 +4,7 @@ import { ShellFrame } from './shell-frame'
 import { supabaseConfigured } from '@/lib/supabase/config'
 import { requestJurisdictionName,requestProfile,requestUser } from '@/modules/auth/identity'
 import { governmentAreaSummary } from '@/modules/government/session'
+import { profileDisplayName } from '@/lib/identity-display'
 
 const PUBLIC_LINKS=[{href:'/',label:'Home'},{href:'/explore',label:'Explore'},{href:'/#how-it-works',label:'How It Works'},{href:'/#city-status',label:'City Status'}]
 
@@ -14,7 +15,7 @@ export async function AppShell({children}:{children:React.ReactNode}) {
   if(user){
    const {profile}=await requestProfile(user.id)
    role=profile?.role||null
-   name=profile?.display_name||(profile?.role==='citizen'?'Citizen':'Government user')
+   name=profileDisplayName(profile?.display_name,profile?.role,user.user_metadata?.display_name)
    if(profile?.role==='government_user'||profile?.role==='platform_admin'){
     const summary=await governmentAreaSummary(user.id,profile.role)
     area=summary.name;areaCount=summary.count

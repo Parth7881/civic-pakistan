@@ -41,8 +41,7 @@ components/
 ```
 
 `app/globals.css` is the whole design system: tokens → primitives → shell → components →
-pages → responsive. Colours are Pakistan green (`--green #0f5c3f`), deep forest
-(`--deep #072a1d`), warm off-white, charcoal and muted grey, with five restrained status
+pages → responsive. Colours are civic green (`--green #0B6B4F`), citizen emerald (`--emerald #063B2C`), government deep forest (`--deep #043126`), warm ivory, charcoal and muted grey, with five restrained status
 colours that are used identically in chips, metric dots, map markers and progress bars.
 
 ## Maps
@@ -76,15 +75,19 @@ identifies that signal; `auth-form`, `password-form` and `jurisdiction-form` let
 instead of rendering an error, and keep the button in its loading state until navigation lands.
 `tests/auth.test.cjs` pins this against the error Next itself throws.
 
-`updatePassword` no longer redirects at all: it returns `redirectTo` and the client navigates,
-which removes the same hazard from the recovery flow and lets the signed-in account page reuse
-the action with `intent=account` to change a password in place.
+`updatePassword` no longer redirects at all: it returns `redirectTo` and the client navigates, which removes the same hazard from the recovery flow. Password recovery remains available from the login flow; the authenticated Profile screen is intentionally limited to profile identity editing.
 
-The account menu (`components/civic/account-menu.tsx`) offers Profile, Change password, Sign in
-with another account, and Sign out. Switching accounts ends the current session and returns to
-the matching sign-in screen; there is deliberately no concurrent multi-session handling.
+The desktop account menu (`components/civic/account-menu.tsx`) intentionally exposes only **Profile** and **Sign out**. The redundant top-right account control is removed on desktop; mobile keeps the same compact account menu in the top bar because the sidebar is hidden. The Profile page allows the signed-in user to update only their own display name; email, role and jurisdiction remain read-only.
 
 ## Backend optimization required later
+
+- **Government Live Map realtime feed.** The current database grants authenticated users `SELECT`
+  on `incidents`, but the RLS policy only exposes incidents owned by the signed-in citizen. Government
+  pages therefore load assigned incidents through the service-role server path plus
+  `government_incident_location(...)`. A browser-side Supabase Realtime subscription cannot safely
+  receive all assigned-government incidents under the existing RLS rules. Enabling true push updates
+  later requires an authorized realtime projection/channel or a narrowly scoped server endpoint that
+  preserves the same jurisdiction checks. `CivicMap` already reconciles its marker/cluster state whenever a new `points` prop arrives, so no map rewrite is required when that secure feed is added. The frontend deliberately does **not** weaken RLS or add aggressive polling just to simulate live markers.
 
 - **Batched incident locations.** `government_incident_location(p_actor, p_incident)` authorizes
   one incident per call, so the Government overview (20) and Live Map (up to 100) fan out that

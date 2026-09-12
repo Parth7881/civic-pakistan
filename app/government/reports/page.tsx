@@ -36,7 +36,7 @@ export default async function GovernmentQueuePage(){
  })
 
  return <>
-  <PageHeader title="Reports" description="Newest first."/>
+  <PageHeader title="Reports"/>
   {error
    ?<Alert tone="error">The queue could not be loaded. Apply the government operations migration and retry.</Alert>
    :<GovernmentQueue items={items} areas={areas} regions={regions||[]}/>}

@@ -40,6 +40,19 @@ export async function signOut() {
  if(error) throw new Error('Unable to sign out. Please try again.')
  redirect(profile&&profile.role!=='citizen'?'/government/sign-in':'/sign-in')
 }
+export async function updateProfileName(form:FormData):Promise<{error?:string;message?:string}> {
+ const name=String(form.get('name')||'').trim()
+ if(name.length<2||name.length>80)return {error:'Enter a profile name between 2 and 80 characters.'}
+ try{
+  const db=createSupabaseServerClient({writableCookies:true})
+  const {data:{user},error:identityError}=await db.auth.getUser()
+  if(identityError||!user)return {error:'Your session has expired. Sign in again.'}
+  const {error}=await db.from('profiles').update({display_name:name}).eq('id',user.id)
+  if(error)return {error:'Unable to update your profile name. Please try again.'}
+  return {message:'Profile name updated.'}
+ }catch{return {error:'Account services are unavailable. Try again later.'}}
+}
+
 export async function requestPasswordReset(form:FormData):Promise<{error?:string;message?:string}> {
  const email=z.email().safeParse(form.get('email'))
  if(!email.success)return {error:'Enter a valid email address.'}

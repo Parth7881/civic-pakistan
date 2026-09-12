@@ -35,7 +35,7 @@ export function ShellFrame({header,children,identity}:{header:React.ReactNode;ch
   <AppSidebar identity={identity} variant={variant}/>
   <div className="shell-main">
    <MobileTopBar identity={identity} variant={variant}/>
-   <TopBar identity={identity} variant={variant}/>
+   <TopBar/>
    <div className="app-frame"><main id="main" className="page-content">{children}</main></div>
   </div>
   <MobileNav variant={variant}/>

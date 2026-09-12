@@ -29,7 +29,7 @@ export const STATUS_TONES:Record<string,{color:string;label:string}>={
  VERIFIED_RESOLVED:{color:'#146c47',label:'Resolved'},
  REJECTED:{color:'#a92f26',label:'Rejected'},
  // Not a report status: used for the citizen's own verified capture point.
- SELECTED:{color:'#0f5c3f',label:'Your verified location'},
+ SELECTED:{color:'#0B6B4F',label:'Your verified location'},
 }
 export function statusTone(status:string){return STATUS_TONES[status]||{color:'#5b6b76',label:status.replaceAll('_',' ')}}
 
