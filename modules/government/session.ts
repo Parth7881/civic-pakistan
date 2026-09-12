@@ -34,7 +34,14 @@ export async function requireGovernment(){
  return {db,service:createSupabaseServiceClient(),user,profile,areas}
 }
 
-export function canAccessArea(role:string,areas:{id:string}[],jurisdictionId:string){return role==='platform_admin'||areas.some(area=>area.id===jurisdictionId)}
+// Defence in depth: every caller reaches this only after requireGovernment(), but the predicate
+// checks the role itself so a non-government role can never be waved through by a populated
+// assignment list.
+export function canAccessArea(role:string,areas:{id:string}[],jurisdictionId:string){
+ if(role==='platform_admin')return true
+ if(role!=='government_user')return false
+ return areas.some(area=>area.id===jurisdictionId)
+}
 
 // Shell-only label. Shares the cached assignment read above, so it costs nothing extra on a
 // Government Portal page and one query on a page that never calls requireGovernment.

@@ -6,7 +6,8 @@ import { MarkerClusterer,type Renderer } from '@googlemaps/markerclusterer'
 import { loadGoogleMaps } from './maps-loader'
 import { CATEGORY_GLYPHS,DEFAULT_GLYPH,MAP_STYLE,PAKISTAN_CENTER,statusTone,type CivicMapPoint } from './maps-config'
 
-export type MapView={latitude:number;longitude:number;zoom?:number}
+export type MapBounds={minLatitude:number;minLongitude:number;maxLatitude:number;maxLongitude:number}
+export type MapView={latitude:number;longitude:number;zoom?:number;bounds?:MapBounds}
 
 export type CivicMapProps={
  points:CivicMapPoint[]
@@ -192,8 +193,16 @@ export default function CivicMap({points,hrefBase='/incidents',initialView=null,
  useEffect(()=>{
   const instance=map.current
   if(!ready||!instance||!focus)return
-  instance.panTo({lat:focus.latitude,lng:focus.longitude})
-  instance.setZoom(focus.zoom??16)
+  if(focus.bounds){
+   // Real jurisdiction geometry: fit the whole service area rather than guessing a zoom level.
+   instance.fitBounds(new google.maps.LatLngBounds(
+    {lat:focus.bounds.minLatitude,lng:focus.bounds.minLongitude},
+    {lat:focus.bounds.maxLatitude,lng:focus.bounds.maxLongitude},
+   ),48)
+  }else{
+   instance.panTo({lat:focus.latitude,lng:focus.longitude})
+   instance.setZoom(focus.zoom??16)
+  }
   circle.current?.setMap(null)
   if(accuracyMeters){
    circle.current=new google.maps.Circle({

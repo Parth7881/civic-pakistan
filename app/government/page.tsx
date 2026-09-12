@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowUpRight,Inbox,MapPinned } from 'lucide-react'
 import { requireGovernment } from '@/modules/government/session'
+import { incidentLocations } from '@/modules/government/geography'
 import { Surface,SectionHeader,StatusBadge,Alert,MetricStrip } from '@/components/ui/civic'
 import { HeroBackdrop } from '@/components/visuals/hero-backdrop'
 import { CivicMapFrame } from '@/components/map/civic-map-frame'
@@ -18,14 +19,14 @@ export default async function GovernmentDashboard(){
  const pending=rows.filter(row=>row.status==='SUBMITTED')
  const resolved=rows.filter(row=>['RESOLVED','VERIFIED_RESOLVED'].includes(row.status))
 
- // Exact coordinates come from the authorized RPC only, for the incidents shown here.
- const mapRows=rows.filter(row=>row.status!=='REJECTED').slice(0,20)
- const located=error?[]:await Promise.all(mapRows.map(async incident=>{
-  const {data:point}=await service.rpc('government_incident_location',{p_actor:user.id,p_incident:incident.id})
-  const location=point?.[0]
-  return location?{id:incident.id,title:incident.category||(incident.urgency==='URGENT_HAZARD'?'Urgent civic hazard':'Civic maintenance'),category:incident.category,status:incident.status,area:areaMap.get(incident.jurisdiction_id)||null,date:formatDate(incident.created_at),href:`/government/reports/${incident.id}`,latitude:location.latitude,longitude:location.longitude}:null
- }))
- const points=located.filter((item):item is Exclude<typeof item,null>=>item!==null)
+ // Exact coordinates come from the authorized RPC only, in one batched call.
+ const mapRows=rows.filter(row=>row.status!=='REJECTED').slice(0,40)
+ const located=error?new Map():await incidentLocations(service,user.id,mapRows.map(row=>row.id))
+ const points=mapRows.flatMap(incident=>{
+  const location=located.get(incident.id)
+  if(!location)return []
+  return [{id:incident.id,title:incident.category||(incident.urgency==='URGENT_HAZARD'?'Urgent civic hazard':'Civic maintenance'),category:incident.category,status:incident.status,area:areaMap.get(incident.jurisdiction_id)||null,date:formatDate(incident.created_at),href:`/government/reports/${incident.id}`,latitude:location.latitude,longitude:location.longitude}]
+ })
 
  const activity:TimelineEvent[]=rows.filter(row=>row.status!=='SUBMITTED').slice(0,6).map(row=>({
   id:row.id,

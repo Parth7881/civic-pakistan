@@ -737,6 +737,8 @@ dl,dd{margin:0}
 .gov-map-canvas{min-height:0;border-radius:14px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow-1)}
 .gov-map-canvas .civic-map-shell{height:100%;border:0;border-radius:0}
 .gov-map-list{display:flex;flex-direction:column;min-height:0;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-1)}
+.live-badge{display:inline-flex;align-items:center;gap:6px;font-size:.6875rem;font-weight:680;letter-spacing:.06em;text-transform:uppercase;color:var(--s-resolved)}
+.live-badge i{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
 .gov-map-list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:.8125rem}
 .gov-map-list-body{flex:1;min-height:0;overflow-y:auto;padding:6px}
 .gov-map-row{border-radius:10px;transition:background .13s}

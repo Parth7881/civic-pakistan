@@ -19,6 +19,9 @@ export interface Database {
       government_add_update: { Args: {p_actor:string;p_incident:string;p_body:string}; Returns:void }
       government_resolve_incident: { Args: {p_actor:string;p_incident:string;p_notes:string;p_upload_ids:string[]}; Returns:void }
       government_incident_location: { Args: {p_actor:string;p_incident:string}; Returns:{latitude:number;longitude:number}[] }
+      government_incident_locations: { Args: {p_actor:string;p_incidents:string[]}; Returns:{incident_id:string;latitude:number;longitude:number}[] }
+      government_jurisdiction_geometry: { Args: {p_actor:string}; Returns:{id:string;name:string;centroid_latitude:number;centroid_longitude:number;min_latitude:number;min_longitude:number;max_latitude:number;max_longitude:number}[] }
+      jurisdiction_map_frames: { Args: Record<string, never>; Returns:{id:string;name:string;level_label:string;centroid_latitude:number;centroid_longitude:number;min_latitude:number;min_longitude:number;max_latitude:number;max_longitude:number}[] }
       admin_provision_government_user: { Args: {p_actor:string;p_user:string;p_name:string;p_jurisdiction:string;p_membership_role:'reviewer'|'operator'}; Returns:string }
       admin_update_government_membership: { Args: {p_actor:string;p_membership:string;p_jurisdiction:string;p_membership_role:'reviewer'|'operator'}; Returns:void }
       admin_set_government_access: { Args: {p_actor:string;p_user:string;p_enabled:boolean}; Returns:void }

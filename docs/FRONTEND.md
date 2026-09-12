@@ -79,26 +79,30 @@ instead of rendering an error, and keep the button in its loading state until na
 
 The desktop account menu (`components/civic/account-menu.tsx`) intentionally exposes only **Profile** and **Sign out**. The redundant top-right account control is removed on desktop; mobile keeps the same compact account menu in the top bar because the sidebar is hidden. The Profile page allows the signed-in user to update only their own display name; email, role and jurisdiction remain read-only.
 
-## Backend optimization required later
+## Government data path (resolved)
 
-- **Government Live Map realtime feed.** The current database grants authenticated users `SELECT`
-  on `incidents`, but the RLS policy only exposes incidents owned by the signed-in citizen. Government
-  pages therefore load assigned incidents through the service-role server path plus
-  `government_incident_location(...)`. A browser-side Supabase Realtime subscription cannot safely
-  receive all assigned-government incidents under the existing RLS rules. Enabling true push updates
-  later requires an authorized realtime projection/channel or a narrowly scoped server endpoint that
-  preserves the same jurisdiction checks. `CivicMap` already reconciles its marker/cluster state whenever a new `points` prop arrives, so no map rewrite is required when that secure feed is added. The frontend deliberately does **not** weaken RLS or add aggressive polling just to simulate live markers.
-
-- **Batched incident locations.** `government_incident_location(p_actor, p_incident)` authorizes
-  one incident per call, so the Government overview (20) and Live Map (up to 100) fan out that
-  many round trips. A batched RPC taking an array of incident ids would collapse this; the
-  frontend already caches the officer's assignments per request, which was the other duplicate.
-- **Jurisdiction centroids.** `jurisdictions.boundary` is never exposed to the browser, so the
-  map cannot frame a civic area that has no reports and cannot draw the reporting-area polygon.
-  `components/map/city-centers.ts` covers the demo cities from the seed migration as a stopgap; a
-  read-only RPC returning a centroid (and optionally simplified GeoJSON) would replace it.
-- **Contribution ledger detail.** The ledger records only `REPORT_ACCEPTED`, so "resolved
-  contributions" on the leaderboard is derived from the citizen's own report statuses.
+- **Batched incident locations.** `government_incident_locations(p_actor, p_incidents[])` replaces
+  the per-incident fan-out. It reuses the exact role/membership predicate of the single-row
+  function, so ids the officer is not authorized for are simply absent from the result. Overview
+  and Live Map each make one bounded call (chunked at 200 ids) instead of one call per report.
+- **Real jurisdiction geometry.** `government_jurisdiction_geometry(p_actor)` returns centroid and
+  bounds for the officer's assigned civic areas; `jurisdiction_map_frames()` does the same for the
+  public map, rounded to the precision `list_public_incidents()` already publishes.
+  `ST_PointOnSurface` is used rather than `ST_Centroid` so a concave service area still frames on
+  a point inside itself. The hardcoded `city-centers.ts` fallback has been deleted.
+- **Live Map updates.** `fetchLiveIncidents()` is an authorized Server Action that re-runs
+  `requireGovernment()` on every call. A browser Supabase Realtime subscription is *not* used: the
+  RLS policy on `incidents` only exposes rows owned by the signed-in citizen, so a client
+  subscription would either deliver nothing or require relaxing that policy. `useLiveIncidents`
+  runs one timer per mounted map, pauses while the tab is hidden, refreshes on focus, never
+  overlaps requests, and stops permanently if authorization is lost. `mergeLivePoints` returns the
+  previous array when nothing changed, so unchanged polls do not rebuild markers, and the map's
+  viewport is untouched because `CivicMap` only fits bounds on first render.
+- **Contribution ledger.** `government_resolve_incident` now records `REPORT_RESOLVED` (+5) for the
+  reporting citizen, excluding demo incidents. Idempotency is structural — the table's
+  `unique(citizen_id,incident_id,event_type)` plus `on conflict do nothing` — so a retried resolve
+  cannot double-award. Already-resolved incidents were backfilled by the same migration, and the
+  leaderboard now counts resolutions from the ledger instead of inferring them from report status.
 
 ## Security boundaries kept intact
 

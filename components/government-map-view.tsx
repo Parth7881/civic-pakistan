@@ -4,7 +4,8 @@ import { useEffect,useMemo,useRef,useState } from 'react'
 import { ArrowUpRight,ExternalLink,MapPinned,Search } from 'lucide-react'
 import { CivicMapFrame } from './map/civic-map-frame'
 import { statusTone,type CivicMapPoint } from './map/maps-config'
-import { cityView } from './map/city-centers'
+import type { MapFrame } from '@/modules/government/geography'
+import { useLiveIncidents } from './map/use-live-incidents'
 import { StatusBadge } from './ui/civic'
 
 export type OperationalPoint=CivicMapPoint&{jurisdictionId:string;createdAt:string}
@@ -12,7 +13,10 @@ export type MapArea={id:string;name:string}
 
 const STATUS_ORDER=['SUBMITTED','ACCEPTED','IN_PROGRESS','RESOLVED','VERIFIED_RESOLVED']
 
-export function GovernmentMapView({points,areas}:{points:OperationalPoint[];areas:MapArea[]}){
+export function GovernmentMapView({points:initialPoints,areas,frames=[]}:{points:OperationalPoint[];areas:MapArea[];frames?:MapFrame[]}){
+ // Authorized live feed. New assigned reports appear without a page reload and without moving
+ // the officer's current viewport.
+ const {points,live}=useLiveIncidents(initialPoints)
  const [area,setArea]=useState('')
  const [status,setStatus]=useState('')
  const [category,setCategory]=useState('')
@@ -32,12 +36,15 @@ export function GovernmentMapView({points,areas}:{points:OperationalPoint[];area
 
  // Selecting a civic area is a filter, never navigation: the map re-frames around that area's
  // reports, or around the area itself when it has none, and the page stays on /government/map.
+ // Real service-area geometry from PostGIS frames the selection even when the area holds no
+ // reports, so there is no dependence on a hardcoded city list.
  const areaView=useMemo(()=>{
   if(!area)return null
+  const frame=frames.find(item=>item.id===area)
+  if(frame)return {latitude:frame.centroid.latitude,longitude:frame.centroid.longitude,bounds:frame.bounds}
   const inArea=points.filter(point=>point.jurisdictionId===area)
-  if(inArea.length)return {latitude:inArea[0].latitude,longitude:inArea[0].longitude,zoom:12}
-  return cityView(areas.find(item=>item.id===area)?.name)
- },[area,points,areas])
+  return inArea.length?{latitude:inArea[0].latitude,longitude:inArea[0].longitude,zoom:12}:null
+ },[area,points,frames])
 
  // Clearing filters must not leave a stale highlight behind.
  useEffect(()=>{
@@ -97,7 +104,7 @@ export function GovernmentMapView({points,areas}:{points:OperationalPoint[];area
    </div>
 
    <aside className="gov-map-list">
-    <div className="gov-map-list-head"><strong>{filtered.length} report{filtered.length===1?'':'s'}</strong>{selected&&<button type="button" className="text-link" onClick={()=>setSelectedId(null)}>Clear selection</button>}</div>
+    <div className="gov-map-list-head"><strong>{filtered.length} report{filtered.length===1?'':'s'}</strong>{live&&<span className="live-badge" title="Updating automatically"><i/>Live</span>}{selected&&<button type="button" className="text-link" onClick={()=>setSelectedId(null)}>Clear selection</button>}</div>
     <div className="gov-map-list-body" ref={listRef}>
      {filtered.length
       ? filtered.map(point=><div key={point.id} data-report={point.id} className={`gov-map-row${selectedId===point.id?' is-selected':''}`}>

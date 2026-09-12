@@ -6,11 +6,11 @@ import type { Area } from './jurisdiction-form'
 import { IncidentList } from './incident-list'
 import { CivicMapFrame } from './map/civic-map-frame'
 import { statusTone } from './map/maps-config'
-import { cityView } from './map/city-centers'
+import type { MapFrame } from '@/modules/government/geography'
 
 const STATUS_FILTERS=['ACCEPTED','IN_PROGRESS','RESOLVED','VERIFIED_RESOLVED','FLAGGED_FOR_REREVIEW']
 
-export function ExploreView({incidents,areas,thumbnails,homeCity=null}:{incidents:PublicIncident[];areas:Area[];thumbnails:Record<string,string>;homeCity?:string|null}) {
+export function ExploreView({incidents,areas,thumbnails,frames=[],homeJurisdictionId=null}:{incidents:PublicIncident[];areas:Area[];thumbnails:Record<string,string>;frames?:MapFrame[];homeJurisdictionId?:string|null}) {
  const [view,setView]=useState<'list'|'map'>('map')
  const [search,setSearch]=useState('')
  const [city,setCity]=useState('')
@@ -38,11 +38,18 @@ export function ExploreView({incidents,areas,thumbnails,homeCity=null}:{incident
 
  // Searching a civic area also moves the map there, so "search city" works without a
  // paid Places/Geocoding call: the platform's own jurisdictions are the search index.
+ // Real civic-area geometry frames the selection, including areas with no public reports.
  const focus=useMemo(()=>{
   if(!city)return null
+  const frame=frames.find(item=>item.id===city)
+  if(frame)return {latitude:frame.centroid.latitude,longitude:frame.centroid.longitude,bounds:frame.bounds}
   const anchor=incidents.find(item=>item.jurisdiction_id===city)
   return anchor?{latitude:anchor.latitude,longitude:anchor.longitude,zoom:12}:null
- },[city,incidents])
+ },[city,incidents,frames])
+ const homeFrame=useMemo(()=>{
+  const frame=homeJurisdictionId?frames.find(item=>item.id===homeJurisdictionId):null
+  return frame?{latitude:frame.centroid.latitude,longitude:frame.centroid.longitude,bounds:frame.bounds}:null
+ },[homeJurisdictionId,frames])
 
  const points=useMemo(()=>filtered.map(item=>({
   id:item.id,title:item.category||'Civic issue',category:item.category,status:item.status,
@@ -96,7 +103,7 @@ export function ExploreView({incidents,areas,thumbnails,homeCity=null}:{incident
     </div>
    </div>
    <div className="explore-map">
-    <CivicMapFrame points={points} initialView={cityView(homeCity)} focus={focus} selectedId={selectedId} onSelect={setSelectedId} label="Public civic report map"/>
+    <CivicMapFrame points={points} initialView={homeFrame} focus={focus} selectedId={selectedId} onSelect={setSelectedId} label="Public civic report map"/>
    </div>
   </div>
   <div className="explore-mobile-switch" role="group" aria-label="Switch between map and list">

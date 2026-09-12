@@ -5,7 +5,7 @@ import { requireCitizen } from '@/modules/auth/session'
 import { publicIncidents,publicIncidentThumbnails } from '@/modules/incidents/queries'
 import { weeklyLeaderboard } from '@/modules/analytics/queries'
 import { CivicMapFrame } from '@/components/map/civic-map-frame'
-import { cityView } from '@/components/map/city-centers'
+import { publicJurisdictionFrames } from '@/modules/government/geography'
 import { IncidentList } from '@/components/incident-list'
 import { Leaderboard } from '@/components/leaderboard'
 import { Surface,SectionHeader,Alert,MetricStrip } from '@/components/ui/civic'
@@ -14,13 +14,16 @@ export const dynamic='force-dynamic'
 export default async function Home(){
  const {db,user,profile}=await requireCitizen()
  if(!profile.active_jurisdiction_id)redirect('/jurisdiction')
- const [{data:area},publicResult,{data:reports,error:reportError},{data:ownedIncidents},leaders]=await Promise.all([
+ const [{data:area},publicResult,{data:reports,error:reportError},{data:ownedIncidents},leaders,frames]=await Promise.all([
   db.from('jurisdictions').select('name').eq('id',profile.active_jurisdiction_id).single(),
   publicIncidents(),
   db.from('citizen_reports').select('id,status,urgency,description,submitted_at').eq('citizen_id',user.id).order('submitted_at',{ascending:false}),
   db.from('incidents').select('id,primary_report_id'),
   weeklyLeaderboard(profile.active_jurisdiction_id,user.id,5),
+  publicJurisdictionFrames(db),
  ])
+ const homeFrame=frames.find(frame=>frame.id===profile.active_jurisdiction_id)
+ const initialView=homeFrame?{latitude:homeFrame.centroid.latitude,longitude:homeFrame.centroid.longitude,bounds:homeFrame.bounds}:null
  const areaName=area?.name||'Your civic area'
  const local=publicResult.incidents.filter(item=>item.jurisdiction_id===profile.active_jurisdiction_id)
  const mine=reports||[]
@@ -53,7 +56,7 @@ export default async function Home(){
     <SectionHeader title="Problems around you"><Link className="text-link" href="/explore">Open full map <ArrowUpRight size={14}/></Link></SectionHeader>
     {publicResult.error
      ?<div style={{padding:18}}><Alert>{publicResult.error}</Alert></div>
-     :<CivicMapFrame points={points} initialView={cityView(areaName)} label={`Civic reports in ${areaName}`}/>}
+     :<CivicMapFrame points={points} initialView={initialView} label={`Civic reports in ${areaName}`}/>}
    </Surface>
    <Surface>
     <SectionHeader title="My recent reports"><Link className="text-link" href="/my-reports">View all <ArrowUpRight size={14}/></Link></SectionHeader>
