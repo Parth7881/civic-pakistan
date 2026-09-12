@@ -1,6 +1,8 @@
+> Current continuation: see [CITIZEN_POLISH.md](CITIZEN_POLISH.md) for citizen workflow validation and [GOVERNMENT_OPERATIONS.md](GOVERNMENT_OPERATIONS.md) for the implemented government lifecycle. Earlier verification notes below are historical.
+
 # CivicPakistan Part 1 setup and acceptance
 
-The existing Next.js 14 App Router application is preserved. No Kiro specification was changed. Part 2 and Part 3 workflows are not implemented.
+The existing Next.js 14 App Router application is preserved and no Kiro specification was changed. This document records the original citizen-core setup; the additive government workflow is documented separately.
 
 ## Configure Supabase
 
@@ -10,20 +12,20 @@ The existing Next.js 14 App Router application is preserved. No Kiro specificati
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: project public anon key (a publishable key also works).
    - `SUPABASE_SERVICE_ROLE_KEY`: server-only service role key. Never use a `NEXT_PUBLIC_` prefix for this key.
    - `NEXT_PUBLIC_APP_URL`: exact application origin, initially `http://localhost:3000`.
-   - `NEXT_PUBLIC_MAPTILER_KEY`: optional MapTiler browser key, restricted to your domains. Without it, Explore falls back to its list.
-   - `DATABASE_URL` and `AI_PROVIDER_API_KEY` are not used by the Part 1 application.
-3. Apply the SQL in `supabase/migrations/20260910124904_citizen_core.sql`, then `20260910124910_demo_jurisdictions.sql`, once, through the Supabase SQL editor or your normal migration workflow. These are bootstrap migrations for a project without these application tables. Inspect an existing remote schema before applying them; they are not a remote schema reconciliation tool.
+   - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`: Google Maps **browser** key. Restrict it in Google Cloud by HTTP referrer and enable only the Maps JavaScript API. Without it, map panels show a configuration notice and reports stay available as lists.
+   - `OPENAI_API_KEY` is optional and server-only. It is used only when `CIVIC_AI_EVIDENCE_ENABLED=true`; see the government operations guide.
+3. Apply migrations in timestamp order through the Supabase SQL editor or your normal migration workflow. The two `202609101249*` files are bootstrap migrations for a project without these application tables. The additive `20260910150612_reporting_location_policy.sql` migration adds controlled demo-location provenance. Inspect an existing remote schema before applying anything; the bootstrap files are not a remote schema reconciliation tool.
 4. The schema expects PostGIS in the `extensions` schema. If PostGIS is already installed elsewhere, reconcile that extension placement before applying the migration. Do not blindly replace an existing database.
 5. Confirm the migrations created the `evidence-originals` and `evidence-display` private buckets. Both allow JPEGs up to 2 MB. Do not make either public or add browser upload policies.
-6. In Auth URL configuration, set Site URL to the application origin, and allow `http://localhost:3000/auth/callback` and `http://localhost:3000/auth/callback?next=reset-password`. Add the deployed HTTPS callbacks when deploying. Keep email templates configured to use Supabase's confirmation URL so the PKCE code exchange returns to this callback. Set recovery link expiry to one hour.
+6. In Auth URL configuration, set Site URL to the application origin, and allow `http://localhost:3000/auth/callback`. Signup and recovery both use this callback; recovery is recognized from the SDK's PKCE state. Add the deployed HTTPS callback when deploying. Keep email templates configured to use Supabase's confirmation URL so the PKCE code exchange returns to this callback. Set recovery link expiry to one hour. Open links in the same browser and use the configured application hostname consistently (do not switch between localhost and 127.0.0.1).
 7. Configure working email delivery/SMTP for signup confirmation and the desired Auth password/rate-limit policies. The application checks signup complexity; hosted Auth must also enforce password rules for direct API calls.
 8. Run `npm run build` with your real public environment variables present, then `npm start`. Browser-exposed variables are embedded at build time. Restart/rebuild after changing them. Use HTTPS for camera/GPS on physical phones; localhost is allowed on the computer running the browser.
 
-No real credentials were available during implementation. No remote migrations were applied. Docker's local database engine was not running, so migrations and RLS require execution against your configured Supabase project.
+The configured hosted project now responds to read-only Auth, profile, and private bucket checks. The two bootstrap migrations are already applied. The reporting-location migration below still requires application. End-to-end authenticated and physical-device acceptance remains pending.
 
 ## What is implemented
 
-- `/sign-up`, `/sign-in`, `/auth/callback`: citizen registration, email confirmation, sign-in; sign-out on Home.
+- `/sign-up`, `/sign-in`, `/auth/callback`: citizen registration, email confirmation, sign-in; sign-out in the account menu.
 - `/forgot-password`, `/reset-password`: email-based password recovery and password update.
 - Cookie-based SSR client, middleware refresh, and independent server identity/role checks. Client, server, and service-role factories are separate.
 - `/jurisdiction`: Pakistan → Province/Region → City/Local Civic Area, persisted on the profile.
@@ -35,9 +37,9 @@ No real credentials were available during implementation. No remote migrations w
 
 ## Submission and privacy model
 
-The latest implementation request explicitly requires a corresponding incident at submission. Part 1 creates a **private `SUBMITTED` incident**, linked to the report. It does not accept it, assign an SLA, or publish it. `requires_manual_classification` is true. This is an explicit Part 1 extension of the design's acceptance-created incident model; Part 2 must transition the existing incident rather than insert a second one. The Kiro documents remain unchanged.
+Submission creates a **private `SUBMITTED` incident**, linked to the report, with `requires_manual_classification` set. The government workflow transitions that same incident during review rather than inserting a second record. Acceptance assigns the category, workstream, and SLA and publishes non-demo incidents.
 
-Public Explore is expected to be empty until incidents have actually been accepted and published by a later workflow. No fictional accepted incidents are seeded.
+Public Explore shows incidents only after an authorized government reviewer accepts and publishes them. No fictional accepted incidents are seeded.
 
 Public access uses a restricted RPC projection with rounded coordinates, no citizen IDs, and no original evidence paths. Public evidence access is authorized by that projection, then a short-lived signed URL is issued for a sanitized derivative. Pending detail access is checked with user-scoped RLS. Current raw tables have no public SELECT access.
 
@@ -80,7 +82,7 @@ Focused tests cover invalid/stale GPS, report validation and real Sharp image de
 
 Supabase migrations/RLS/Auth/Storage and physical GPS/camera acceptance require the manual checks above. Exact per-email lockout/inactivity policies still need provider configuration or additional enforcement; verified nationwide boundaries are not included. Current Explore reads up to 500 public incidents; pagination is needed before larger deployments. Government review, AI, SLA, scoring and accountability features intentionally remain for later parts.
 
-## Verification in this implementation environment
+## Earlier implementation verification (superseded)
 
 - Final production build: passed; all 18 generated page entries and API routes compiled.
 - `npm run typecheck`: passed.

@@ -1,1 +1,1 @@
-export default function Loading(){return <p className="notice" role="status">Loading civic information…</p>}
+export default function Loading(){return <div className="page-skeleton" role="status" aria-label="Loading civic information"><span/><span/><div><i/><i/><i/><i/></div><section/></div>}

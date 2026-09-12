@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { apiCitizen } from '@/modules/auth/api'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
 import { assertSameOrigin,failure } from '@/lib/http'
+import { demoGeoEnabled } from '@/modules/reports/server-policy'
 export const runtime='nodejs'
 export async function POST(request:NextRequest) {
  const uploaded:{bucket:string;path:string}[]=[]
@@ -19,6 +20,7 @@ export async function POST(request:NextRequest) {
   const uploadId=z.string().uuid().parse(form.get('uploadId'))
   const {data:session}=await db.from('capture_sessions').select('*').eq('id',sessionId).eq('citizen_id',user.id).single()
   if(!session||session.consumed_at||Date.parse(session.expires_at)<Date.now()) throw new Error('Camera session expired or already submitted. Verify location and capture again.')
+  if(session.location_source==='demo'&&!demoGeoEnabled())return failure(new Error('Demo mode is disabled.'),403)
   const service=createSupabaseServiceClient()
   const {data:prior}=await service.from('capture_uploads').select('id').eq('id',uploadId).eq('citizen_id',user.id).eq('capture_session_id',sessionId).maybeSingle()
   if(prior)return NextResponse.json({uploadId:prior.id})

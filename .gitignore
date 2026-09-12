@@ -47,3 +47,6 @@ coverage/
 zip kiro.zip
 
 zip kiro.zip
+
+# Playwright MCP QA output
+.playwright-mcp/

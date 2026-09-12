@@ -8,6 +8,8 @@ const filename=path.resolve(__dirname,'../modules/reports/validation.ts')
 const compiled=new Module(filename,module)
 compiled.filename=filename
 compiled.paths=Module._nodeModulePaths(path.dirname(filename))
+const originalRequire=compiled.require.bind(compiled)
+compiled.require=name=>name==='./policy'?require('./load-ts.cjs')('../modules/reports/policy.ts'):originalRequire(name)
 compiled._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,filename)
 const {validateFreshLocation,reportSchema}=compiled.exports
 const httpFilename=path.resolve(__dirname,'../lib/http.ts')

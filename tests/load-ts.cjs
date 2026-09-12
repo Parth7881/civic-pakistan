@@ -1,0 +1,3 @@
+const fs=require('node:fs'),path=require('node:path'),Module=require('node:module'),ts=require('typescript')
+function load(relative,overrides={}){const filename=path.resolve(__dirname,relative);const m=new Module(filename,module);m.filename=filename;m.paths=Module._nodeModulePaths(path.dirname(filename));const original=m.require.bind(m);m.require=name=>Object.hasOwn(overrides,name)?overrides[name]:name.startsWith('.')&&fs.existsSync(path.resolve(path.dirname(filename),name+'.ts'))?load(path.resolve(path.dirname(filename),name+'.ts')):original(name);m._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,esModuleInterop:true,target:ts.ScriptTarget.ES2022}}).outputText,filename);return m.exports}
+module.exports=load
