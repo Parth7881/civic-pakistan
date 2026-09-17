@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { requestPasswordReset,updatePassword } from '@/modules/auth/actions'
 import { isNavigationSignal } from '@/lib/navigation-error'
+import { PasswordInput } from '@/components/password-input'
 
 type Result={error?:string;message?:string;redirectTo?:string}
 
@@ -31,8 +32,8 @@ export function PasswordForm({reset=false,intent}:{reset?:boolean;intent?:'accou
  return <form className="form-stack" onSubmit={submit}>
   {reset
    ?<>
-     <label>New password<input name="password" type="password" autoComplete="new-password" minLength={8} maxLength={128} required/></label>
-     <label>Confirm new password<input name="confirm" type="password" autoComplete="new-password" minLength={8} maxLength={128} required/></label>
+     <label>New password<PasswordInput name="password" autoComplete="new-password" minLength={8} maxLength={128} required/></label>
+     <label>Confirm new password<PasswordInput name="confirm" autoComplete="new-password" minLength={8} maxLength={128} required/></label>
      <p className="caption">8–128 characters, with an uppercase letter, a lowercase letter, a number and a special character.</p>
     </>
    :<label>Email address<input name="email" type="email" autoComplete="email" required/></label>}

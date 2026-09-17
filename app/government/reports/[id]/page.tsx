@@ -2,8 +2,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { z } from 'zod'
 import { ArrowLeft,CalendarDays,ExternalLink,MapPin } from 'lucide-react'
-import { requireGovernment,canAccessArea } from '@/modules/government/session'
+import { requireGovernment } from '@/modules/government/session'
 import { GovernmentActions } from '@/components/government-actions'
+import { governmentGlobalIncidentLocations } from '@/modules/government/global-read'
 import { Surface,StatusBadge,EvidenceScore,SectionHeader,Alert } from '@/components/ui/civic'
 import { ActivityTimeline,type TimelineEvent } from '@/components/civic/activity-timeline'
 import { CivicMapFrame } from '@/components/map/civic-map-frame'
@@ -14,17 +15,22 @@ export default async function GovernmentReportDetail({params}:{params:{id:string
  if(!z.string().uuid().safeParse(params.id).success)notFound()
  const {service,user,profile,areas}=await requireGovernment()
  const {data:incident,error}=await service.from('incidents').select('*').eq('id',params.id).single()
- if(error||!incident||!canAccessArea(profile.role,areas,incident.jurisdiction_id))notFound()
- const [{data:report},{data:evidence},{data:events},{data:updates},{data:location},{data:area}]=await Promise.all([
+ if(error||!incident)notFound()
+ const [{data:report},{data:evidence},{data:events},{data:updates},{data:area}]=await Promise.all([
   service.from('citizen_reports').select('*').eq('id',incident.primary_report_id).single(),
   service.from('evidence').select('*').eq('incident_id',incident.id).order('created_at'),
   service.from('incident_events').select('*').eq('incident_id',incident.id).order('created_at'),
   service.from('government_updates').select('*').eq('incident_id',incident.id).order('created_at'),
-  service.rpc('government_incident_location',{p_actor:user.id,p_incident:incident.id}),
   service.from('jurisdictions').select('name').eq('id',incident.jurisdiction_id).single(),
  ])
  if(!report)notFound()
- const point=location?.[0]
+ let point:{latitude:number;longitude:number}|undefined
+ try{
+  const locations=await governmentGlobalIncidentLocations(service,user.id,[incident.id])
+  point=locations.get(incident.id)
+ }catch{
+  point=undefined
+ }
  const photos:{url:string;resolution:boolean;date:string}[]=[]
  const membershipRole=profile.role==='platform_admin'?'operator':areas.find(item=>item.id===incident.jurisdiction_id)?.membershipRole
  for(const item of evidence||[]){
@@ -119,17 +125,17 @@ export default async function GovernmentReportDetail({params}:{params:{id:string
          points={[{id:incident.id,title,category:incident.category,status:report.status,area:areaName,latitude:point.latitude,longitude:point.longitude}]}
          focus={{latitude:point.latitude,longitude:point.longitude,zoom:17}} fitToPoints={false} legend={false} controls={false}
          label={`Exact reported location in ${areaName}`}/>
-       :<div className="map-config-notice"><MapPin size={24} color="#8b968f"/><p>Location unavailable for this assignment.</p></div>}
+       :<div className="map-config-notice"><MapPin size={24} color="#8b968f"/><p>Location unavailable.</p></div>}
      </div>
      <div style={{padding:'0 16px 16px',display:'flex',flexDirection:'column',gap:10}}>
       <h3>Exact report location</h3>
       {point?<>
        <p className="coordinate-readout">{point.latitude.toFixed(6)}, {point.longitude.toFixed(6)}</p>
        <a className="secondary-button full-button" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${point.latitude},${point.longitude}`)}`} target="_blank" rel="noreferrer">Open in Google Maps <ExternalLink size={15}/></a>
-      </>:<Alert tone="error">Location unavailable for this assignment.</Alert>}
+      </>:<Alert tone="error">Location unavailable.</Alert>}
      </div>
     </Surface>
-    <GovernmentActions incidentId={incident.id} status={report.status==='REJECTED'?'REJECTED':incident.status} urgency={incident.urgency} canOperate={membershipRole==='operator'}/>
+    <GovernmentActions incidentId={incident.id} status={report.status==='REJECTED'?'REJECTED':incident.status} urgency={incident.urgency} canReview={!!membershipRole} canOperate={membershipRole==='operator'}/>
    </aside>
   </div>
  </div>

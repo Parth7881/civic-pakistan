@@ -50,3 +50,5 @@ zip kiro.zip
 
 # Playwright MCP QA output
 .playwright-mcp/
+
+.vercel

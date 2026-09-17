@@ -4,6 +4,7 @@ import { useEffect,useMemo,useRef,useState } from 'react'
 import { ArrowUpRight,ExternalLink,MapPinned,Search } from 'lucide-react'
 import { CivicMapFrame } from './map/civic-map-frame'
 import { statusTone,type CivicMapPoint } from './map/maps-config'
+import { cityView } from './map/city-centers'
 import { StatusBadge } from './ui/civic'
 
 export type OperationalPoint=CivicMapPoint&{jurisdictionId:string;createdAt:string}
@@ -32,9 +33,9 @@ export function GovernmentMapView({points,areas}:{points:OperationalPoint[];area
  const areaView=useMemo(()=>{
   if(!area)return null
   const inArea=points.filter(point=>point.jurisdictionId===area)
-  if(!inArea.length)return null
-  return {latitude:inArea[0].latitude,longitude:inArea[0].longitude,zoom:12}
- },[area,points])
+  if(inArea.length)return {latitude:inArea[0].latitude,longitude:inArea[0].longitude,zoom:12}
+  return cityView(areas.find(item=>item.id===area)?.name)
+ },[area,points,areas])
 
  useEffect(()=>{
   if(selectedId&&!filtered.some(point=>point.id===selectedId))setSelectedId(null)

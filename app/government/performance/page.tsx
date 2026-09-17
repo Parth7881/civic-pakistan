@@ -3,10 +3,8 @@ import { PageHeader,Surface,Alert,SectionHeader,MetricStrip } from '@/components
 export const dynamic='force-dynamic'
 
 export default async function GovernmentPerformance(){
- const {service,areas,profile}=await requireGovernment()
- let query=service.from('incidents').select('status,accepted_at,resolved_at,sla_deadline').neq('status','SUBMITTED')
- if(profile.role!=='platform_admin')query=query.in('jurisdiction_id',areas.length?areas.map(area=>area.id):['00000000-0000-0000-0000-000000000000'])
- const {data,error}=await query
+ const {service}=await requireGovernment()
+ const {data,error}=await service.from('incidents').select('status,accepted_at,resolved_at,sla_deadline').neq('status','SUBMITTED')
  const rows=data||[]
  const resolved=rows.filter(row=>['RESOLVED','VERIFIED_RESOLVED'].includes(row.status))
  const rejected=rows.filter(row=>row.status==='REJECTED')
@@ -18,7 +16,6 @@ export default async function GovernmentPerformance(){
  const healthy=backlog.length?backlog.filter(row=>!row.sla_deadline||Date.parse(row.sla_deadline)>=Date.now()).length/backlog.length:1
  const overdue=backlog.length-Math.round(healthy*backlog.length)
 
- // Donut geometry from real counts only. No composite or invented score.
  const segments=[
   {label:'Resolved',value:resolved.length,color:'var(--s-resolved)'},
   {label:'In progress',value:rows.filter(row=>row.status==='IN_PROGRESS').length,color:'var(--s-progress)'},
@@ -34,7 +31,7 @@ export default async function GovernmentPerformance(){
  }).join(',')
 
  return <>
-  <PageHeader title="Performance"/>
+  <PageHeader title="Performance" description="Platform-wide lifecycle metrics visible to all Government Portal accounts."/>
   {error?<Alert tone="error">Performance data is unavailable.</Alert>:<>
    <MetricStrip label="Lifecycle totals" metrics={[
     {label:'Cases received',value:rows.length},

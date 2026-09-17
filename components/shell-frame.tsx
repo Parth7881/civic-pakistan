@@ -5,7 +5,7 @@ import { AppSidebar,type Identity } from './civic/app-sidebar'
 import { MobileNav,MobileTopBar } from './civic/mobile-nav'
 import { TopBar } from './civic/top-bar'
 
-const AUTH_PATHS=['/sign-in','/sign-up','/forgot-password','/reset-password','/setup','/government/sign-in','/auth/invite']
+const AUTH_PATHS=['/sign-in','/sign-up','/forgot-password','/reset-password','/setup','/government/sign-in','/government/sign-up','/auth/invite']
 
 export function ShellFrame({header,children,identity}:{header:React.ReactNode;children:React.ReactNode;identity:Identity}){
  const path=usePathname()

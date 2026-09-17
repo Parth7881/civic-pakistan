@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse,type NextRequest } from 'next/server'
 import { supabaseConfigured,supabaseConfig } from '@/lib/supabase/config'
 export async function middleware(request:NextRequest) {
+ if(request.nextUrl.pathname==='/')return NextResponse.redirect(new URL('/sign-in',request.url))
  let response=NextResponse.next({request})
  if (!supabaseConfigured()) return response
  const {url,key}=supabaseConfig()

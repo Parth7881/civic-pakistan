@@ -17,7 +17,7 @@ export function GovernmentQueue({items,areas,regions}:{items:QueueItem[];areas:A
   (!city||item.jurisdictionId===city)
   &&(!region||areas.some(area=>area.id===item.jurisdictionId&&area.parent_id===region))
   &&(!urgency||item.urgency===urgency)
-  &&(!search||`${item.id} ${item.description||''} ${areaName.get(item.jurisdictionId)||''}`.toLowerCase().includes(search.toLowerCase()))
+  &&(!search||`${item.id} ${item.description||''} ${areaName.get(item.jurisdictionId)||''} ${item.status}`.toLowerCase().includes(search.toLowerCase()))
  ),[items,areas,areaName,region,city,urgency,search])
 
  const selected=filtered.find(item=>item.id===selectedId)||filtered[0]||null
@@ -26,19 +26,19 @@ export function GovernmentQueue({items,areas,regions}:{items:QueueItem[];areas:A
   <div className="gov-queue">
    <div className="government-queue-toolbar">
     <label className="search-field">
-     <span className="sr-only">Search report queue</span>
+     <span className="sr-only">Search reports</span>
      <Search size={16}/>
-     <input type="search" placeholder="Search report ID, issue or area" value={search} onChange={event=>setSearch(event.target.value)}/>
+     <input type="search" placeholder="Search report ID, issue, status or area" value={search} onChange={event=>setSearch(event.target.value)}/>
     </label>
     <div className="filter-bar government-filters">
-     {regions.length>0&&<label>Region<select value={region} onChange={event=>{setRegion(event.target.value);setCity('')}}><option value="">All assigned regions</option>{regions.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>}
-     <label>Civic area<select value={city} onChange={event=>setCity(event.target.value)}><option value="">All assigned areas</option>{areas.filter(area=>!region||area.parent_id===region).map(area=><option value={area.id} key={area.id}>{area.name}</option>)}</select></label>
+     {regions.length>0&&<label>Region<select value={region} onChange={event=>{setRegion(event.target.value);setCity('')}}><option value="">All regions</option>{regions.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>}
+     <label>Civic area<select value={city} onChange={event=>setCity(event.target.value)}><option value="">All civic areas</option>{areas.filter(area=>!region||area.parent_id===region).map(area=><option value={area.id} key={area.id}>{area.name}</option>)}</select></label>
      <label>Urgency<select value={urgency} onChange={event=>setUrgency(event.target.value)}><option value="">Both lanes</option><option value="URGENT_HAZARD">Urgent hazard</option><option value="MAINTENANCE">Maintenance</option></select></label>
     </div>
    </div>
    {!filtered.length
-    ?<div style={{padding:18}}><EmptyState title="Nothing is waiting" description="No submitted reports match this assigned view."/></div>
-    :<div className="government-queue-table" role="table" aria-label="Government report queue">
+    ?<div style={{padding:18}}><EmptyState title="No reports in this view" description="No civic reports match the current filters."/></div>
+    :<div className="government-queue-table" role="table" aria-label="Government reports">
       <div className="government-queue-head" role="row"><span>ID</span><span>Issue / area</span><span>Received</span><span>Evidence</span><span>Status</span><span className="sr-only">Open</span></div>
       {filtered.map(item=><button
         type="button" role="row" key={item.id}
@@ -48,7 +48,7 @@ export function GovernmentQueue({items,areas,regions}:{items:QueueItem[];areas:A
        <span className="queue-id" data-label="ID">#{item.id.slice(0,8)}</span>
        <span className="queue-issue" data-label="Issue">
         <strong>{item.urgency==='URGENT_HAZARD'?'Urgent civic hazard':'Civic maintenance'}</strong>
-        <small>{areaName.get(item.jurisdictionId)||'Assigned area'} · {item.description||'No citizen description provided.'}</small>
+        <small>{areaName.get(item.jurisdictionId)||'Civic area'} · {item.description||'No citizen description provided.'}</small>
        </span>
        <span data-label="Received">{formatDate(item.createdAt)}</span>
        <span data-label="Evidence">{item.score!=null?`${item.score.toFixed(1)}/10`:'—'}</span>
@@ -66,12 +66,12 @@ export function GovernmentQueue({items,areas,regions}:{items:QueueItem[];areas:A
       <p className="muted">{selected.description||'No citizen description was provided with this report.'}</p>
       <dl className="detail-facts">
        <div><dt>Report</dt><dd>#{selected.id.slice(0,8)}</dd></div>
-       <div><dt>Civic area</dt><dd>{areaName.get(selected.jurisdictionId)||'Assigned area'}</dd></div>
+       <div><dt>Civic area</dt><dd>{areaName.get(selected.jurisdictionId)||'Civic area'}</dd></div>
        <div><dt>Received</dt><dd>{formatDate(selected.createdAt)} · {formatTime(selected.createdAt)} PKT</dd></div>
        <div><dt>Evidence score</dt><dd>{selected.score!=null?`${selected.score.toFixed(1)}/10`:'Not scored'}</dd></div>
       </dl>
       <Link className="primary-button full-button" href={`/government/reports/${selected.id}`}>Open full record <ArrowUpRight size={16}/></Link>
-      <p className="caption">Accept, reject, progress and resolution actions are recorded on the full record.</p>
+      <p className="caption">Every Government Portal account can view this record. Actions remain limited to assigned civic areas.</p>
      </section>
     :<section className="surface"><div className="gov-preview-empty"><Inbox size={26}/><h3>Select a report</h3><p className="caption">Choose a row to preview its evidence and citizen description.</p></div></section>}
   </aside>

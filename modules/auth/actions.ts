@@ -24,6 +24,10 @@ export async function authenticate(mode:'sign-in'|'sign-up',form:FormData):Promi
    const {error}=await db.auth.signInWithPassword({email,password})
    if(error) {logAuthFailure('signin',error);return {error:authErrorMessage(error)}}
    const {data:{user}}=await db.auth.getUser()
+   if(user?.user_metadata?.account_type==='government_application'){
+    await db.auth.signOut({scope:'local'})
+    return {error:'This account was registered for Government Portal access. Choose Government Login.'}
+   }
    const {data:profile}=user?await db.from('profiles').select('role').eq('id',user.id).single():{data:null}
    if(profile?.role!=='citizen'){
     await db.auth.signOut()

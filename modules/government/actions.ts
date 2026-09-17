@@ -15,15 +15,17 @@ export async function governmentAuthenticate(form:FormData):Promise<{error?:stri
   const {error}=await db.auth.signInWithPassword(parsed.data)
   if(error){logAuthFailure('government-signin',error);return {error:authErrorMessage(error)}}
   const {data:{user}}=await db.auth.getUser()
-  const {data:profile}=user?await db.from('profiles').select('role').eq('id',user.id).single():{data:null}
+  if(!user){await db.auth.signOut({scope:'local'});return {error:'Government account verification failed. Please sign in again.'}}
+  const {data:profile}=await db.from('profiles').select('role').eq('id',user.id).single()
+  const service=createSupabaseServiceClient()
   if(!profile||!['government_user','platform_admin'].includes(profile.role)){
-   await db.auth.signOut()
+   await db.auth.signOut({scope:'local'})
    return {error:'This account does not have Government Portal access.'}
   }
   if(profile.role==='government_user'){
-   const {count,error:membershipError}=await createSupabaseServiceClient().from('government_memberships').select('*',{head:true,count:'exact'}).eq('user_id',user!.id).eq('active',true)
-   if(membershipError)return {error:'Government assignments are unavailable. Please retry.'}
-   if(!count){await db.auth.signOut();return {error:'This account has no active Government Portal assignment.'}}
+   const {count,error:membershipError}=await service.from('government_memberships').select('*',{head:true,count:'exact'}).eq('user_id',user.id).eq('active',true)
+   if(membershipError){await db.auth.signOut({scope:'local'});return {error:'Government assignments are unavailable. Please retry.'}}
+   if(!count){await db.auth.signOut({scope:'local'});return {error:'This account has no active Government Portal assignment.'}}
   }
  }catch{return {error:'Government account services are unavailable. Please retry.'}}
  redirect('/government')
