@@ -23,7 +23,7 @@ export default async function GovernmentQueuePage(){
    const paths=Array.from(first.values())
    if(paths.length){
     const {data:signed}=await service.storage.from('evidence-display').createSignedUrls(paths,900)
-    for(const [id,path] of first){const url=signed?.find(item=>item.path===path)?.signedUrl;if(url)thumbnails.set(id,url)}
+    for(const [id,path] of Array.from(first.entries())){const url=signed?.find(item=>item.path===path)?.signedUrl;if(url)thumbnails.set(id,url)}
    }
   }
  }catch{/* Report browsing stays usable when preview signing fails. */}
